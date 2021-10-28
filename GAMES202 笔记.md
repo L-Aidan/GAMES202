@@ -8,5 +8,6 @@
 
 ### OpenGL
 
-![wallhaven-732l6y_1920x1080](https://github.com/L-Aidan/Images/main/wallhaven-732l6y_1920x1080.png)
 
+
+![image-20211028222745268](https://github.com/L-Aidan/Images/blob/main/202110282227362.png)
