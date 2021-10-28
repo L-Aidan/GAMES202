@@ -8,5 +8,5 @@
 
 ### OpenGL
 
-![image-20211028213305402](C:\Users\17853\AppData\Roaming\Typora\typora-user-images\image-20211028213305402.png)
+![image-20211028213305402](https://github.com/L-Aidan/GAMES202/blob/main/pictures/image-20211028213305402.png)
 
