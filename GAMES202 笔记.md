@@ -94,7 +94,7 @@ $$
 
 当满足上面其中一个条件时，对于渲染方程来说，把 $V()$ 看作 $f(x)$ ,其他项看作 $g(x)$，渲染方程就可以写成：
 $$
-L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdot \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i dw_i 
+L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdot \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i dw_i
 $$
 这个积分会在环境光遮蔽（Ambient Occlusions）章节用到。
 
@@ -111,6 +111,8 @@ PCF是抗锯齿，反走样的一种技术。
 这块filter的区域越大，平均的像素也就越多，可以实现越模糊，越软的阴影。
 
 ### PCSS（Percentage Closer Soft Shadows）
+
+[Percentage-Closer Soft Shadows (nvidia.com)](https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf)
 
 ![image-20211102211307583](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png)
 
