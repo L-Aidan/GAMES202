@@ -15,12 +15,12 @@
 ### 渲染方程
 
 $$
-L_0(p,w_0) = L_e(p,w_0) + \int_{H^2} f_r(p,w_i\rightarrow w_o) L_i(p,w_i) cos\theta_i dw_i
+L_0(p,w_0) = L_e(p,w_0) + \int_{H^2} f_r(p,w_i\rightarrow w_o) L_i(p,w_i) cos\theta_i dw_i \tag{3.1}
 $$
 
 实时渲染中的渲染方程通常写为：
 $$
-L_0(p,w_0) = L_e(p,w_0) + \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i V(p,w_i) dw_i
+L_0(p,w_0) = L_e(p,w_0) + \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i V(p,w_i) dw_i \tag{3.2}
 $$
 这里公式中的 $L_i( p ,w_i)$ 与 $V( p ,w_i)$ 相乘才等同于上一公式的 $L_i( p ,w_i)$，表示将①光源是否存在 和②光源能否打到 $ p$ 点 两项分开考虑
 
@@ -38,7 +38,7 @@ $$
 
 ### 存在的问题
 
-#### 自遮挡（Self occlusion）
+#### 1. Self occlusion（自遮挡）
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012230917.png" alt="image-20211101223001812" style="zoom: 50%;" />
 
@@ -48,11 +48,19 @@ $$
 
 但设置bias会带来另一个问题：detached shadow。
 
-#### Detached shadow
+#### 2. Detached shadow
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012248429.png" alt="image-20211101224834349" style="zoom: 50%;" />
 
 设置bias后，有可能出现这种情况，即本来判定为遮挡的点，因为bias的存在，被判定为不遮挡。那么当bias较大时，就会出现上图的状况。
+
+#### 3. Aliasing（走样）
+
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022023700.png" alt="image-20211102202317556" style="zoom: 67%;" />
+
+还是由于shadow map的每一个像素代表了一块区域，那么当遮挡物离 $p$ 点较远时，就会出现上图中左边的锯齿现象。
+
+解决方法：cascaded shadow map等
 
 ### Second Depth Shadow Mapping
 
@@ -66,10 +74,66 @@ $$
 
 <center>电子竞技不相信眼泪</center>
 
-走样
+### Approximation in RTR
 
-两个积分不等式
+有很多不等式，在一定情况下可以看作等号成立。由于实时渲染只要求看着真实，而不必满足绝对的真实，因此这种近似可以应用在渲染方程中。
+$$
+\int_{\Omega}f(x)g(x)dx \approx \frac{\int_{\Omega}f(x)dx}{\int_{\Omega}dx} \cdot \int_{\Omega}g(x)dx \tag{3.3}
+$$
+(数学含义或者证明待补充)
 
-PCF
+当满足以下其中一个条件时，两边可近似相等
 
-PCSS
+1. Small support 
+
+   指的是公式中的积分域 $\Omega$ 尽可能小的时候。因此如果只考虑直接光照，在点光源和方向光源的情况下， $\Omega$ 就只表示光源方向的立体角，就会很小。
+
+2. Smooth integrand
+
+   指的是被积函数 $g(x)$ 在 $\Omega$ 内的变化很小，即频率低，“光滑”的情况下。因此如果G(x)是一个漫反射的BRDF，那么它值的变化就不大。
+
+当满足上面其中一个条件时，对于渲染方程来说，把 $V()$ 看作 $f(x)$ ,其他项看作 $g(x)$，渲染方程就可以写成：
+$$
+L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdot \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i dw_i 
+$$
+这个积分会在环境光遮蔽（Ambient Occlusions）章节用到。
+
+### PCF（Percentage Closer Filtering）
+
+PCF是抗锯齿，反走样的一种技术。
+
+基本思想：对一个像素的某个属性，取它周围多个像素属性的平均值。
+
+在Shadow Mapping中的应用：可用于实现面光源的软阴影的效果
+
+对于一个点 $p$，它到光源的距离是dis，通过与shadow map中深度值z的比较，我们可以得到它的可见性，从而确定它是否显示阴影。而PCF则是将dis与shadow map上的一块区域的深度值作比较，得到一系列的可见性值（0或1），再求这些可见性的均值。用此值去确定阴影颜色的深浅。
+
+这块filter的区域越大，平均的像素也就越多，可以实现越模糊，越软的阴影。
+
+### PCSS（Percentage Closer Soft Shadows）
+
+![image-20211102211307583](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png)
+
+通过现实中的景象，我们可以观察到阴影在不同位置的软度是不同的。虽然上图有景深导致的模糊，但还是能说明这个问题。
+
+此时有一个问题：对于不同的着色点 $p$ ，采用多大的filter？
+
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="image-20211102212011505" style="zoom: 67%;" />
+
+图中 $w_{Penumbra}$  表示软阴影的范围大小，即软的程度。影响它的因素有：面光源的大小 $w_{Light}$、面光源到遮挡物的距离 $d_{Blocker}$、面光源到阴影接收物的距离 $d_{Receiver}$。根据相似三角性原理：
+$$
+w_{Penumbra} = (d_{Receiver} - d_{Blocker}) \cdot w_{Light} / d_{Blocker} \tag{3.4}
+$$
+假设 $w_{Light}$ 已知，着色点 $p$ 到光源的距离 $d_{Receiver}$ 也可求。而 $d_{Blocker}$ 就是shadow map中记录的深度值（因为面光源无法生成shadow map，所以应该将面光源看作点光源，生成一张shadow map，比如用面光源中心的点）。
+
+因为是面光源，所以对于我们要着色的一个点 $p$，遮挡物上不同的位置都可能挡住了一些入射光，所以需要求一个平均的 $d_{Blocker}$，就是对shadow map上的一个区域中的 $d_{Blocker}$ 求平均值（需要注意，如果shaodow map中的点没有遮挡点 $p$，那就不算遮挡物，不参与平均值计算），那么又有了一个问题，这个区域的大小是多少？
+
+![image-20211102221703551](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png)
+
+有一个方法是，让点 $p$ 连向光源的四个顶点（假设是四个），看这个视锥在shadow map上覆盖了多大的区域，用这个区域来当作求均值的区域。这种方法是很符合直观想象的，我们想求的就是遮挡物在shadow map上覆盖的区域。
+
+至此，就可以完成整个流程：
+
+1. 让点 $p$ 连向光源的顶点，看这个视锥在shadow map上覆盖了多大的区域，在这个区域中计算平均  $d_{Blocker}$。
+2. 用公式(3.4) 计算软阴影范围大小，确定PCF的滤波范围。
+3. 使用PCF，求出点 $p$ 的阴影深浅程度。
