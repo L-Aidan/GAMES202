@@ -42,7 +42,7 @@ $$
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012230917.png" alt="image-20211101223001812" style="zoom: 50%;" />
 
-由于shadow map本身是有分辨率的，所以它每个像素中用一个值表示一片区域的深度值。对地面上的一个点 $p$ ，如果它对应的shadow map中的深度值小于 $p$ 点到光源的距离，即 z < dis 时，就会被判定为遮挡。
+由于shadow map本身是有分辨率的，所以它每个像素中用一个值表示一片区域的深度值。对地面上的一个点 $p$ ，如果它对应的shadow map中的深度值小于 $p$ 点到光源的距离（真实的深度值），即 z < dis 时，就会被判定为遮挡。
 
 解决方法：我们可以设定一个bias来抵消上面提到的两个距离的差值，当z + bias < dis 时才判定为遮挡。考虑到在 $p$ 点，如果光源是近乎垂直打在地面上的，那儿shadow map中的值和 $p$ 的深度值差异会很小，bias就可以很小。如果光束方向近乎平行于地面（grazing angle），那么该差异可能很大，bias也需要较大。因此可以用入射光的角度$\theta$来控制bias的大小。
 
@@ -58,7 +58,7 @@ $$
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022023700.png" alt="image-20211102202317556" style="zoom: 67%;" />
 
-还是由于shadow map的每一个像素代表了一块区域，那么当遮挡物离 $p$ 点较远时，就会出现上图中左边的锯齿现象。
+还是由于shadow map的每一个像素代表了一块区域，那么当遮挡物离 $p$ 点较远时，一个像素的投影就会变得很大，就会出现上图中左边的锯齿现象。
 
 解决方法：cascaded shadow map等
 
@@ -118,21 +118,27 @@ PCF是抗锯齿，反走样的一种技术。
 
 通过现实中的景象，我们可以观察到阴影在不同位置的软度是不同的。虽然上图有景深导致的模糊，但还是能说明这个问题。
 
-此时有一个问题：对于不同的着色点 $p$ ，采用多大的filter？
+所以需要确定：对于不同位置的着色点 $p$ ，采用多大的filter？
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="image-20211102212011505" style="zoom: 67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/image-20211103164111947.png" alt="image-20211103164111947" style="zoom: 80%;" />
 
-图中 $w_{Penumbra}$  表示软阴影的范围大小，即软的程度。影响它的因素有：面光源的大小 $w_{Light}$、面光源到遮挡物的距离 $d_{Blocker}$、面光源到阴影接收物的距离 $d_{Receiver}$。根据相似三角性原理：
+图中 $w_{Penumbra}$  表示软阴影的范围大小，即软的程度。从上图中可以总结出，影响它的因素有：面光源的大小 $w_{Light}$、面光源到遮挡物的垂直距离 $d_{Blocker}$、面光源到阴影接收物的垂直距离 $d_{Receiver}$。根据相似三角性原理：
 $$
 w_{Penumbra} = (d_{Receiver} - d_{Blocker}) \cdot w_{Light} / d_{Blocker} \tag{3.4}
 $$
+（个人理解）实际应用时，如下图：
+
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" style="zoom:67%;" />
+
+将面光源水平放置，（假设接收物和面光源平行就好，不影响p点接收到的光）。那么公式里的 $d_{Blocker}$ 就是橙色的那一段，$d_{Receiver}$ 就是橙色 + 黑色的那一段。
+
 假设 $w_{Light}$ 已知，着色点 $p$ 到光源的距离 $d_{Receiver}$ 也可求。而 $d_{Blocker}$ 就是shadow map中记录的深度值（因为面光源无法生成shadow map，所以应该将面光源看作点光源，生成一张shadow map，比如用面光源中心的点）。
 
-因为是面光源，所以对于我们要着色的一个点 $p$，遮挡物上不同的位置都可能挡住了一些入射光，所以需要求一个平均的 $d_{Blocker}$，就是对shadow map上的一个区域中的 $d_{Blocker}$ 求平均值（需要注意，如果shaodow map中的点没有遮挡点 $p$，那就不算遮挡物，不参与平均值计算），那么又有了一个问题，这个区域的大小是多少？
+因为是面光源，所以对于我们要着色的一个点 $p$，遮挡物上不同的位置都可能挡住了一些入射光，所以需要求一个平均的 $d_{Blocker}$，就是对shadow map上的一个区域中的 $d_{Blocker}$ 求平均值（需要注意，如果shaodow map中的点没有遮挡住 $p$，那就不算遮挡物，不参与平均值计算），那么又有了一个问题，这个区域的大小应该取多少？
 
-![image-20211102221703551](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png" alt="image-20211102221703551" style="zoom:67%;" />
 
-有一个方法是，让点 $p$ 连向光源的四个顶点（假设是四个），看这个视锥在shadow map上覆盖了多大的区域，用这个区域来当作求均值的区域。这种方法是很符合直观想象的，我们想求的就是遮挡物在shadow map上覆盖的区域。
+有一个方法是，让点 $p$ 连向光源的四个顶点（假设是四个），看这个视锥在shadow map上覆盖了多大的区域，用这个区域来当作求均值的区域。这种方法是很符合直观想象的，我们想求的就是遮住点 $p$ 的blocker的范围，从图中看自然就是红色的区域。
 
 至此，就可以完成整个流程：
 
