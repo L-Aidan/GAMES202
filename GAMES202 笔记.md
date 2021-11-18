@@ -24,6 +24,8 @@ L_0(p,w_0) = L_e(p,w_0) + \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i 
 $$
 这里公式中的 $L_i( p ,w_i)$ 与 $V( p ,w_i)$ 相乘才等同于上一公式的 $L_i( p ,w_i)$，表示将①光源是否存在 和②光源能否打到 $ p$ 点 两项分开考虑
 
+
+
 ## Shadow Mapping
 
 ### 基本思想
@@ -35,6 +37,8 @@ $$
 需要注意：shadow map中保存的是场景中顶点的真实深度（点到光源的真实距离）还是在裁剪空间（视锥体frustum需要经过仿射变换变为正方体形状的裁剪空间）内的z值？进行深度比较时，要保证比较双方的意义是相同的。
 
 平行光源和点光源的区别在于观察空间不同，平行光源是一个长方体，点光源是平截头体。
+
+
 
 ### 存在问题
 
@@ -62,6 +66,8 @@ $$
 
 解决方法：cascaded shadow map等
 
+
+
 ### Second Depth Shadow Mapping
 
 (试图解决自遮挡和detached shadow的方法，但因耗费太高而没有人用)
@@ -73,6 +79,8 @@ $$
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012307928.png" alt="image-20211101230757888" style="zoom:67%;" />
 
 <center>电子竞技不相信眼泪</center>
+
+
 
 ### Approximation in RTR
 
@@ -98,6 +106,8 @@ L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdo
 $$
 这个积分会在环境光遮蔽（Ambient Occlusions）章节用到。
 
+
+
 ### PCF（Percentage Closer Filtering）
 
 PCF是抗锯齿，反走样的一种技术。
@@ -109,6 +119,8 @@ PCF是抗锯齿，反走样的一种技术。
 对于一个点 $p$，它到光源的距离是dis，通过与shadow map中深度值z的比较，我们可以得到它的可见性，从而确定它是否显示阴影。而PCF则是将dis与shadow map上的一块区域的深度值作比较，得到一系列的可见性值（0或1），再求这些可见性的均值。用此值去确定阴影颜色的深浅。
 
 这块filter的区域越大，平均的像素也就越多，可以实现越模糊，越软的阴影。
+
+
 
 ### PCSS（Percentage Closer Soft Shadows）
 
@@ -143,8 +155,12 @@ $$
 至此，就可以完成整个流程：
 
 1. （Blocker search）让点 $p$ 连向光源的顶点，看这个视锥在shadow map上覆盖了多大的区域，在这个区域中计算平均  $d_{Blocker}$。
+
 2. （Penumbra estimation）用公式(3.4) 计算软阴影范围大小，确定PCF的滤波范围。
+
 3. （Percentage Closer Filting）使用PCF，求出点 $p$ 的阴影深浅程度。
+
+   
 
 ### VSSM（Variance Soft Shadow Mapping）
 
@@ -198,6 +214,8 @@ $$
 
 ![image-20211110195727577](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111101957640.png)
 
+
+
 ### MSM（Moment Shadow Mapping）
 
 在VSSM里，切比雪夫不等式来近似求得一个概率，也就是CDF，但这个CDF是不精准的。因此如果能够找到更精确的CDF，就可以得到更精准的结果。
@@ -213,3 +231,55 @@ VSSM中只用到了 $X$ 和 $X^2$,，可以认为只用到了前两阶矩，如�
 那么如何用矩得到这样一个CDF，还得看论文：https://jankautz.com/publications/VSSM_PG2010.pdf
 
 这一步的耗费也是很高的。
+
+
+
+### Distance Field Soft Shadows
+
+#### signed distance function（符号距离函数）
+
+signed distance function（符号距离函数）：对空间中的任意一点，它到一个物体表面有一个最小距离（根据在物体的内外可能区分正负）。
+
+![image-20211118104237704](C:\Users\yitong\AppData\Roaming\Typora\typora-user-images\image-20211118104237704.png)
+
+
+
+对一个点，它到这个场景的最小距离就是它到每一个物体的最小距离的最小值。空间中每一个点都有这样一个最小距离，这些距离在空间中形成了一个标量场。
+
+应用：
+
+1. 对移动边界的位置进行插值（对每一个点到黑白边界线的distance function进行插值）。
+
+![image-20211118105650015](C:\Users\yitong\AppData\Roaming\Typora\typora-user-images\image-20211118105650015.png)
+
+2. 融合两个物体（具体方法：对两个distance function进行插值？？不确定）
+
+![image-20211118105400078](C:\Users\yitong\AppData\Roaming\Typora\typora-user-images\image-20211118105400078.png)
+
+#### SDF在阴影中的应用
+
+阴影，可以理解为在着色点 $p$ 处，面光源被遮挡的越多就越暗。SDF可以得到一个着色点被遮挡的程度，也就得到了visibility。
+
+![image-20211118112112672](C:\Users\yitong\AppData\Roaming\Typora\typora-user-images\image-20211118112112672.png)
+
+对图中圆圈中的点，圆的半径表示它的SDF的值，意味着在以此点为圆心，此半径为球的内部，是没有任何物体的；也就是说在这个球内，没有物体会遮挡住下方的着色点。
+
+![image-20211118112610701](C:\Users\yitong\AppData\Roaming\Typora\typora-user-images\image-20211118112610701.png)
+
+和Ray-marching结合，我们可以粗略的估计出着色点被遮挡的程度。如上图，假设从o点射向光源的ray，在点 $p_1$ ，我们查询SDF得到一个半径，可以求得角度 ${\theta}_1$，粗略的认为 ${\theta}_1$内的方向角内没有物体遮挡住光源。然后在ray方向上找到点 $p_2$ 。重复此过程，直至ray走了足够远的距离或者ray与一个物体相交。取各个 $\theta$ 的最小值，就得到了未被遮挡的范围大小。
+
+勾股定理求出 $\theta$ :
+$$
+{\theta} = arcsin\frac{SDF(p)}{||p-o||}
+$$
+而实际应用中，反三角函数运算量很大，因此可以转化为：
+$$
+{\theta} = min\{\frac{k\cdot SDF(p)}{||p-o||}, 1.0\}
+$$
+用k来调整软阴影的大小。k越大，意味着足够小的 $\theta$ 就可以使visibility达到1.0，阴影就越硬，反之则越软。
+
+**Pros & Cons**：
+
+Pros：速度快，质量高
+
+Cons：空间中每个点的SDF需要预计算，存储空间耗费也很高。
