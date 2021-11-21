@@ -6,7 +6,7 @@
 
 有很多不等式，在一定情况下可以看作等号成立。由于实时渲染只要求看着真实，而不必满足绝对的真实，因此这种近似可以应用在渲染方程中。
 $$
-\int_{\Omega}f(x)g(x)dx \approx \frac{\int_{\Omega}f(x)dx}{\int_{\Omega}dx} \cdot \int_{\Omega}g(x)dx \tag{3.3}
+\int_{\Omega}f(x)g(x)dx \approx \frac{\int_{\Omega}f(x)dx}{\int_{\Omega}dx} \cdot \int_{\Omega}g(x)dx \tag{1}
 $$
 (数学含义或者证明待补充)
 
@@ -22,9 +22,8 @@ $$
 
 当满足上面其中一个条件时，对于渲染方程来说，把 $V()$ 看作 $f(x)$ ,其他项看作 $g(x)$，渲染方程就可以写成：
 $$
-L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdot \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i dw_i
+L_0(p,w_0) \approx \frac{\int_{\Omega^+}V(p,w_i) dw_i}{\int_{\Omega^+}dw_i} \cdot \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i dw_i \tag{2}
 $$
-这个积分会在环境光遮蔽（Ambient Occlusions）章节用到。
 
 ## IBL(Image Based Lighting)
 
@@ -40,6 +39,33 @@ IBL，使用一张图像来，表示所有方向上的环境光。
 
 这里只考虑着色，不考虑阴影。渲染方程里也不考虑visibility项：
 $$
-L_0(p,w_0) = \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i  dw_i \tag{1}
+L_0(p,w_0) = \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i  dw_i \tag{3}
 $$
-解此方程可用蒙特卡洛积分采样，但实时渲染希望避免采样带来的耗费。
+解此方程可用蒙特卡洛积分采样，但实时渲染希望避免采样带来的耗费，于是可以使本文开头的数学近似。
+
+![image-20211121154654370](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211546405.png)
+
+如果brdf是glossy的（左图），那么积分域就很小；如果brdf是diffuse的（右图），那么brdf的值变化就不大。因此可以使用公式（1）将公式（3）近似为：
+$$
+L_0(p,w_0) \approx \frac{\int_{\Omega_{fr}}L_i(p,w_i) dw_i}{\int_{\Omega_{fr}}dw_i} \cdot \int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i \tag{4}
+$$
+考虑左边的项$\frac{\int_{\Omega_{fr}}L_i(p,w_i) dw_i}{\int_{\Omega_{fr}}dw_i} $，对光源的积分再除以对1的积分，对离散值来说就是加权平均，也就相当于对环境光的图像做了一个高斯滤波，这些滤波图像是可以预计算的：
+
+![image-20211121155204872](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211552950.png)
+
+而原理也可以直观地进行理解：
+
+![image-20211121155303669](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211553711.png)
+
+对于一个glossy的材质，渲染方程中是对它的lobe的立体角内进行采样（左图），每个方向采样的概率不同，所以结果就近似于在lobe内所有方向上的值的加权平均（右图）。
+
+到这里，对于公式（4），左边的项$\frac{\int_{\Omega_{fr}}L_i(p,w_i) dw_i}{\int_{\Omega_{fr}}dw_i} $已经可以预计算出来了，接下来考虑右边的项：$\int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i$ 。
+
+这里涉及微表面反射BRDF以及其中的菲尼尔项等（我都忘光了）。总体来说就是一个将参数降至两维然后打表预计算的思想。
+
+假设BRDF采用的是Microfacet BRDF：
+$$
+f(i,o) = \frac{F(i,h)G(i,o,h)D(h)}{4(n,i)(n,o)}
+$$
+不考虑其中的 $G(i,o,h)$ ：shadowing-masking 项，那么参数有
+
