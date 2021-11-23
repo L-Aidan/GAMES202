@@ -35,7 +35,9 @@ IBL，使用一张图像来，表示所有方向上的环境光。
 
 
 
-## Shading from IBL
+## The Split Sum
+
+split sum是一种在环境光下着色的算法。
 
 这里只考虑着色，不考虑阴影。渲染方程里也不考虑visibility项：
 $$
@@ -65,7 +67,18 @@ $$
 
 假设BRDF采用的是Microfacet BRDF：
 $$
-f(i,o) = \frac{F(i,h)G(i,o,h)D(h)}{4(n,i)(n,o)}
+f(i,o) = \frac{F(i,h)G(i,o,h)D(h)}{4(n,i)(n,o)} \tag{5}
 $$
-不考虑其中的 $G(i,o,h)$ ：shadowing-masking 项，那么参数有
+不考虑其中的 $G(i,o,h)$ 即shadowing-masking 项，那么还剩菲涅}尔项和法线分布函数项。
 
+![image-20211123134053870](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111231341983.png)
+
+总结下：对于一个着色点 $p$，积分$\int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i$ 中只含有三个变量：基础反射率 $R_0$（表示颜色），入射角 $\theta$，粗糙程度 $\alpha$。然而三维的表还是太大了。
+
+根据公式（5），对此积分公式进行化简，提取出 $R_0$，对于一个特定的BRDF， $R_0$是确定的，因此只需要对剩余两个参数打一个表，预计算出下面公式右边的两个积分值。整个积分的求值就只需要查两次表。
+$$
+\int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i \approx R_0 \int_{\Omega^+} \frac{f_r}{F}(1-(1-cos\theta_{i})^5) cos\theta_i dw_i + \int_{\Omega^+} \frac{f_r}{F}(1-cos\theta_{i})^5 cos\theta_i dw_i
+$$
+整个split sum过程就完成了，通过多处预计算，不需要进行采样，可以直接求出着色点颜色。
+
+![image-20211123140138808](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111231401907.png)
