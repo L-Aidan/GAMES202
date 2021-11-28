@@ -77,7 +77,7 @@ $$
 
 根据公式（5），对此积分公式进行化简，提取出 $R_0$，对于一个特定的BRDF， $R_0$是确定的，因此只需要对剩余两个参数打一个表，预计算出下面公式右边的两个积分值。整个积分的求值就只需要查两次表。
 $$
-\int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i \approx R_0 \int_{\Omega^+} \frac{f_r}{F}(1-(1-cos\theta_{i})^5) cos\theta_i dw_i + \int_{\Omega^+} \frac{f_r}{F}(1-cos\theta_{i})^5 cos\theta_i dw_i
+\int_{\Omega^+} f_r(p,w_i,w_o) cos\theta_i dw_i \approx R_0 \int_{\Omega^+} \frac{f_r}{F}(1-(1-cos\theta_{i})^5) cos\theta_i dw_i + \int_{\Omega^+} \frac{f_r}{F}(1-cos\theta_{i})^5 cos\theta_i dw_i \tag{6}
 $$
 整个split sum过程就完成了，通过多处预计算，不需要进行采样，可以直接求出着色点颜色。
 
@@ -101,11 +101,49 @@ $$
 
 ![image-20211125125706889](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111251257018.png)
 
-图中每一个形状都代表一个基函数，从上到下每一阶代表不同的频率（类比傅里叶函数的基函数），第0阶（$l = 0$）频率最低。
-
-环境光其实就是一个在球面上的函数，不同立体角方向上有着不同的值。那么这个函数可以用球谐函数的基函数的线性组合来表示。
+图中每一个形状都代表一个基函数，从上到下每一阶表示函数值有不同的频率（类比傅里叶函数的基函数），第0阶（$l = 0$）频率最低。环境光其实就是一个在球面上的函数，不同立体角方向上有着不同的值。那么这个函数可以用球谐函数的基函数的线性组合来表示。
 
 对于任意一个二维的函数$f(w)$，它可以用积函数的线性组合来表示，那么对于一个基函数$B_i(w)$，它前面的系数$c_i$，可以通过一个积分求得：
 $$
-c_i = \int_\Omega f(w)B_i(w)dw
+c_i = \int_\Omega f(w)B_i(w)dw \tag{7}
 $$
+类比三维空间的三个基$[1,0,0],[0,1,0],[0,0,1]$，也可以把他们看作球面上的函数，每个基只在一个立体角方向上有值。那么任意一个三维向量$[x,y,z]$，都可以用这三个基来表示。每个基前面的系数也可以用上面的公式得到，只不过公式里的 $\Omega$ 就只是一个立体角方向，因此结果就是$f(w)B_i(w) = [x,y,z] \cdot [1,0,0] = x$。这个操作可以叫做投影 。 
+
+球谐函数有着这样的性质，即都是单位正交基：
+$$
+\int_{\Omega}B_i(w) \cdot B_j(w)dw = 1 \quad(i = j)\\
+\int_{\Omega}B_i(w) \cdot B_j(w)dw = 0 \quad(i \neq j) \tag{8}
+$$
+对于BRDF函数，出射方向（射入人眼的方向）已知的情况下，也可以看作是一个球面上的函数，那么也可以投影到球谐函数上。
+
+如果将一个diffuse的BRDF函数投影到球谐函数上的话，发现前三阶基函数的系数是有很大值的，而后面阶数的系数就几乎为0，表示diffuse的BRDF是没有什么高频信息的。
+
+![image-20211128143837026](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281439343.png)
+
+而渲染方程是lighting和BRDF的点积的积分，用到上面提到的知识，点积可以看成是投影。不管多高频的lighting，投影到低频的BRDF上，结果仍是低频的。因此对于diffuse的BRDF，如果BRDF只用前三阶基函数就可以表示，那么lighting也只需要三阶。
+
+### PRT（Precomputed Radiance Transfer）
+
+基于球谐函数，就可以得到环境光下的阴影，这种方法叫做PRT。
+$$
+L(o) = \int_{\Omega}L(i)V(i)\rho(i,o)max(0,n\cdot i)di \tag{9}
+$$
+![image-20211128144706856](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281447902.png)
+
+对于上面的渲染方程，若场景中所有物体都不变，观察方向给定，则其中每一项都可以看作是球面上的一个函数，求积分就是将四项的值对应相乘。
+
+把$L(i)$之外的项看作 light transport：
+
+![image-20211128144949734](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281449769.png)
+
+对于Diffuse情况，BRDF值是常数，提到前面，将$L(o)$用基函数的线性组合来表示（预计算），然后交换积分求和顺序，现在积分号里是基函数和light transport的乘积，那么又可以将light transport投影到基函数上（预计算），最终得到的结果只需要计算两个向量的点乘：
+
+![image-20211128150333936](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281503977.png)
+
+这一方法的限制就是：
+
+1. diffuse
+2. 场景中所有物体都不动
+3. 观察方向不变
+
+但有一点可以变化，环境光可以旋转，因为环境光旋转后，用来表示它的球谐函数基函数的线性组合也可以很快地得到。
