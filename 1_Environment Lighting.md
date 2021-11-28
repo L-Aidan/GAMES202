@@ -35,7 +35,7 @@ IBL，使用一张图像来，表示所有方向上的环境光。
 
 
 
-## The Split Sum
+## Shading : The Split Sum
 
 split sum是一种在环境光下着色的算法。
 
@@ -82,3 +82,30 @@ $$
 整个split sum过程就完成了，通过多处预计算，不需要进行采样，可以直接求出着色点颜色。
 
 ![image-20211123140138808](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111231401907.png)
+
+
+
+## Shadow from environment lighting
+
+环境光的阴影很难做，有多种解决办法，包括
+
+1. 把此问题看作多光源阴影问题（复杂度线性于光源数量）。
+2. 把此问题看作采样问题（Visibility项非常复杂，且不能从环境中很好的分离出来）。
+3. 工业界做法，用一个最主要的光源生成阴影。
+
+本节算法 Precomputed radiance trasfer。
+
+### Spherical Harmonics
+
+球谐函数，是定义在一个球面上的一组函数，参数维度为两维（$\theta, \phi$）。
+
+![image-20211125125706889](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111251257018.png)
+
+图中每一个形状都代表一个基函数，从上到下每一阶代表不同的频率（类比傅里叶函数的基函数），第0阶（$l = 0$）频率最低。
+
+环境光其实就是一个在球面上的函数，不同立体角方向上有着不同的值。那么这个函数可以用球谐函数的基函数的线性组合来表示。
+
+对于任意一个二维的函数$f(w)$，它可以用积函数的线性组合来表示，那么对于一个基函数$B_i(w)$，它前面的系数$c_i$，可以通过一个积分求得：
+$$
+c_i = \int_\Omega f(w)B_i(w)dw
+$$
