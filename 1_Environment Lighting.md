@@ -124,7 +124,7 @@ $$
 
 ### PRT（Precomputed Radiance Transfer）
 
-基于球谐函数，就可以得到环境光下的阴影，这种方法叫做PRT。
+基于球谐函数，就可以得到环境光下的阴影，这种着色方法叫做PRT。
 $$
 L(o) = \int_{\Omega}L(i)V(i)\rho(i,o)max(0,n\cdot i)di \tag{9}
 $$
@@ -136,7 +136,7 @@ $$
 
 ![image-20211128144949734](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281449769.png)
 
-对于Diffuse情况，BRDF值是常数，提到前面，将$L(o)$用基函数的线性组合来表示（预计算），然后交换积分求和顺序，现在积分号里是基函数和light transport的乘积，那么又可以将light transport投影到基函数上（预计算），最终得到的结果只需要计算两个向量的点乘：
+对于Diffuse情况，BRDF值是常数，提到前面，将$L(i)$用基函数的线性组合来表示（预计算），然后交换积分求和顺序，现在积分号里是基函数和light transport的乘积，那么又可以将light transport投影到基函数上（预计算），最终得到的结果只需要计算两个向量的点乘：
 
 ![image-20211128150333936](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111281503977.png)
 
@@ -144,6 +144,6 @@ $$
 
 1. diffuse
 2. 场景中所有物体都不动
-3. 观察方向不变
+3. 观察方向不变（diffuse情况下，其实观察方向可以是任意的）
 
 但有一点可以变化，环境光可以旋转，因为环境光旋转后，用来表示它的球谐函数基函数的线性组合也可以很快地得到。
