@@ -44,7 +44,7 @@ $$
 
 #### 1. Self occlusion（自遮挡）
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012230917.png" alt="image-20211101223001812" style="zoom: 50%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012230917.png" alt="image-20211101223001812" width="800px;" />
 
 由于shadow map本身是有分辨率的，所以它每个像素中用一个值表示一片区域的深度值。对地面上的一个点 $p$ ，如果它对应的shadow map中的深度值小于 $p$ 点到光源的距离（真实的深度值），即 z < dis 时，就会被判定为遮挡。
 
@@ -54,13 +54,13 @@ $$
 
 #### 2. Detached shadow
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012248429.png" alt="image-20211101224834349" style="zoom: 50%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012248429.png" alt="image-20211101224834349" width="800px;" />
 
 设置bias后，有可能出现这种情况，即本来判定为遮挡的点，因为bias的存在，被判定为不遮挡。那么当bias较大时，就会出现上图的状况。
 
 #### 3. Aliasing（走样）
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022023700.png" alt="image-20211102202317556" style="zoom: 67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022023700.png" alt="image-20211102202317556" width="800px;" />
 
 还是由于shadow map的每一个像素代表了一块区域，那么当遮挡物离 $p$ 点较远时，一个像素的投影就会变得很大，就会出现上图中左边的锯齿现象。
 
@@ -72,11 +72,11 @@ $$
 
 (试图解决自遮挡和detached shadow的方法，但因耗费太高而没有人用)
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012256008.png" alt="image-20211101225651952" style="zoom:50%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012256008.png" alt="image-20211101225651952" width="800px;" />
 
 这个方法和最基础的Shadow Mapping方法的区别就是，它采用最小深度和次小深度的均值来作为shadow map中的值。因为不采用bias，所以不会出现detached shadow；如果最小深度和次小深度的值相差较大，也会一定程度减少自遮挡（个人理解）。但缺点就是①：需要模型是一个“盒子”类的东西（watertight）②：保存每个像素的最小深度和次小深度，尽管时间复杂度相同为$O(n)$，但这种方法前面的常数部分更大，耗费要更高。
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012307928.png" alt="image-20211101230757888" style="zoom:67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012307928.png" alt="image-20211101230757888" width="800px" />
 
 <center>电子竞技不相信眼泪</center>
 
@@ -100,13 +100,13 @@ PCF是抗锯齿，反走样的一种技术。
 
 [Percentage-Closer Soft Shadows (nvidia.com)](https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf)
 
-![image-20211102211307583](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png" width="800px" />
 
-通过现实中的景象，我们可以观察到阴影在不同位置的软度是不同的。虽然上图有景深导致的模糊，但还是能说明这个问题。
+ 通过现实中的景象，我们可以观察到阴影在不同位置的软度是不同的。虽然上图有景深导致的模糊，但还是能说明这个问题。
 
 所以需要确定：对于不同位置的着色点 $p$ ，采用多大的filter？
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/image-20211103164111947.png" alt="image-20211103164111947" style="zoom: 80%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/image-20211103164111947.png" alt="image-20211103164111947" width="500px" />
 
 图中 $w_{Penumbra}$  表示软阴影的范围大小，即软的程度。从上图中可以总结出，影响它的因素有：面光源的大小 $w_{Light}$、面光源到遮挡物的垂直距离 $d_{Blocker}$、面光源到阴影接收物的垂直距离 $d_{Receiver}$。根据相似三角性原理：
 $$
@@ -114,7 +114,7 @@ w_{Penumbra} = (d_{Receiver} - d_{Blocker}) \cdot w_{Light} / d_{Blocker} \tag{3
 $$
 （个人理解）实际应用时，如下图：
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" style="zoom:67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" width="500px" />
 
 将面光源水平放置，（假设接收物和面光源平行就好，不影响p点接收到的光）。那么公式里的 $d_{Blocker}$ 就是橙色的那一段，$d_{Receiver}$ 就是橙色 + 黑色的那一段。
 
@@ -122,7 +122,7 @@ $$
 
 因为是面光源，所以对于我们要着色的一个点 $p$，遮挡物上不同的位置都可能挡住了一些入射光，所以需要求一个平均的 $d_{Blocker}$，就是对shadow map上的一个区域中的 $d_{Blocker}$ 求平均值（需要注意，如果shaodow map中的点没有遮挡住 $p$，那就不算遮挡物，不参与平均值计算），那么又有了一个问题，这个区域的大小应该取多少？
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png" alt="image-20211102221703551" style="zoom:67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png" alt="image-20211102221703551" width="500px" />
 
 有一个方法是，让点 $p$ 连向光源的四个顶点（假设是四个），看这个视锥在shadow map上覆盖了多大的区域，用这个区域来当作求均值的区域。这种方法是很符合直观想象的，我们想求的就是遮住点 $p$ 的blocker的范围，从图中看自然就是红色的区域。
 
