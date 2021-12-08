@@ -72,11 +72,11 @@ $$
 
 (试图解决自遮挡和detached shadow的方法，但因耗费太高而没有人用)
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012256008.png" alt="image-20211101225651952" width="800px;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012256008.png" alt="image-20211101225651952" width="600px;" />
 
 这个方法和最基础的Shadow Mapping方法的区别就是，它采用最小深度和次小深度的均值来作为shadow map中的值。因为不采用bias，所以不会出现detached shadow；如果最小深度和次小深度的值相差较大，也会一定程度减少自遮挡（个人理解）。但缺点就是①：需要模型是一个“盒子”类的东西（watertight）②：保存每个像素的最小深度和次小深度，尽管时间复杂度相同为$O(n)$，但这种方法前面的常数部分更大，耗费要更高。
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012307928.png" alt="image-20211101230757888" width="800px" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012307928.png" alt="image-20211101230757888" width="500px" />
 
 <center>电子竞技不相信眼泪</center>
 
@@ -100,13 +100,13 @@ PCF是抗锯齿，反走样的一种技术。
 
 [Percentage-Closer Soft Shadows (nvidia.com)](https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf)
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png" width="800px" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022113681.png" width="600px" />
 
  通过现实中的景象，我们可以观察到阴影在不同位置的软度是不同的。虽然上图有景深导致的模糊，但还是能说明这个问题。
 
 所以需要确定：对于不同位置的着色点 $p$ ，采用多大的filter？
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/image-20211103164111947.png" alt="image-20211103164111947" width="500px" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/image-20211103164111947.png" alt="image-20211103164111947" width="300px" />
 
 图中 $w_{Penumbra}$  表示软阴影的范围大小，即软的程度。从上图中可以总结出，影响它的因素有：面光源的大小 $w_{Light}$、面光源到遮挡物的垂直距离 $d_{Blocker}$、面光源到阴影接收物的垂直距离 $d_{Receiver}$。根据相似三角性原理：
 $$
@@ -114,7 +114,7 @@ w_{Penumbra} = (d_{Receiver} - d_{Blocker}) \cdot w_{Light} / d_{Blocker} \tag{3
 $$
 （个人理解）实际应用时，如下图：
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" width="500px" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" width="300px" />
 
 将面光源水平放置，（假设接收物和面光源平行就好，不影响p点接收到的光）。那么公式里的 $d_{Blocker}$ 就是橙色的那一段，$d_{Receiver}$ 就是橙色 + 黑色的那一段。
 
@@ -122,7 +122,7 @@ $$
 
 因为是面光源，所以对于我们要着色的一个点 $p$，遮挡物上不同的位置都可能挡住了一些入射光，所以需要求一个平均的 $d_{Blocker}$，就是对shadow map上的一个区域中的 $d_{Blocker}$ 求平均值（需要注意，如果shaodow map中的点没有遮挡住 $p$，那就不算遮挡物，不参与平均值计算），那么又有了一个问题，这个区域的大小应该取多少？
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png" alt="image-20211102221703551" width="500px" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022217609.png" alt="image-20211102221703551" width="600px" />
 
 有一个方法是，让点 $p$ 连向光源的四个顶点（假设是四个），看这个视锥在shadow map上覆盖了多大的区域，用这个区域来当作求均值的区域。这种方法是很符合直观想象的，我们想求的就是遮住点 $p$ 的blocker的范围，从图中看自然就是红色的区域。
 
@@ -164,7 +164,7 @@ $$
 
 虽然这一步也是求一块区域内的深度值均值，但却有一点需要注意，这里求的是矩形区域内blocker的深度值均值，而不是所有深度值的均值。
 
-![image-20211110193615113](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111101936221.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111101936221.png" alt="image-20211102221703551" width="200px" />
 
 即在上图的矩形区域中，假设着色点的深度值是7，那么只需要求蓝色数字的均值。来看这样一个公式：
 $$
@@ -186,7 +186,7 @@ P(x>t) \leq \frac{\sigma^2}{\sigma^2 + (t-\mu)^2}
 $$
 由于我们由于我们是把切比雪夫不等式当成了等式来使用，那么我们得到的 $P$，是比真实的 $P$ 大的。而 $P$ 表示百分之多少的深度值是大于dis的（没有挡住点 $p$ ），就是说这个值越大，得到的可见性值越大，点 $p$ 越亮。即最终得到的图像比实际场景要亮。当这个误差很大时，就会出现漏光问题（Light Leaking）：
 
-![image-20211110195727577](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111101957640.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111101957640.png" alt="image-20211102221703551" width="800px" />
 
 
 
@@ -198,7 +198,7 @@ $$
 
 VSSM中只用到了 $X$ 和 $X^2$,，可以认为只用到了前两阶矩，如果再考虑到更高阶的矩，就可以重建一个更加准确的CDF。
 
-![image-20211110202109156](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111102021198.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111102021198.png" alt="image-20211102221703551" width="400px" />
 
 图中PCF是书写错误，应该为CDF。可以看到使用前四阶矩得到的CDF就非常精准了。
 
@@ -214,7 +214,7 @@ VSSM中只用到了 $X$ 和 $X^2$,，可以认为只用到了前两阶矩，如�
 
 signed distance function（符号距离函数）：对空间中的任意一点，它到一个物体表面有一个最小距离（根据在物体的内外可能区分正负）。
 
-![image-20211121141741465](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211417525.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211417525.png" alt="image-20211102221703551" width="00px" />
 
 对一个点，它到这个场景的最小距离就是它到每一个物体的最小距离的最小值。空间中每一个点都有这样一个最小距离，这些距离在空间中形成了一个标量场。
 
@@ -222,21 +222,21 @@ signed distance function（符号距离函数）：对空间中的任意一点�
 
 1. 对移动边界的位置进行插值（对每一个点到黑白边界线的distance function进行插值）。
 
-   ![image-20211121141832170](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211418222.png)
+   <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211418222.png" alt="image-20211102221703551" width="600px" />
 
 2. 融合两个物体（具体方法：对两个distance function进行插值？？不确定）
 
-   ![image-20211121141942237](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211419305.png)
+   <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211419305.png" alt="image-20211102221703551" width="600px" />
 
 #### SDF在阴影中的应用
 
 阴影，可以理解为在着色点 $p$ 处，面光源被遮挡的越多就越暗。SDF可以得到一个着色点被遮挡的程度，也就得到了visibility。
 
-![image-20211121143130078](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211431137.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211431137.png" alt="image-20211102221703551" width="400px" />
 
 对图中圆圈中的点，圆的半径表示它的SDF的值，意味着在以此点为圆心，此半径为球的内部，是没有任何物体的；也就是说在这个球内，没有物体会遮挡住下方的着色点。
 
-![image-20211121143209316](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211432390.png)
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211432390.png" alt="image-20211102221703551" width="400px" />
 
 和Ray-marching结合，我们可以粗略的估计出着色点被遮挡的程度。如上图，假设从o点射向光源的ray，在点 $p_1$ ，我们查询SDF得到一个半径，可以求得角度 ${\theta}_1$，粗略的认为 ${\theta}_1$内的方向角内没有物体遮挡住光源。然后在ray方向上找到点 $p_2$ 。重复此过程，直至ray走了足够远的距离或者ray与一个物体相交。取各个 $\theta$ 的最小值，就得到了未被遮挡的范围大小。
 
