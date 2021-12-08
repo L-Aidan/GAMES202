@@ -6,7 +6,7 @@
 
 （待补充）
 
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202110282255523.png" alt="image-20211028225552443" style="zoom: 67%;" />
+<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202110282255523.png" alt="image-20211028225552443" width="600px;" />
 
 ### OpenGL
 
