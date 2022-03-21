@@ -1,18 +1,8 @@
 # GAMES202 笔记
 
-## CG基础回顾
 
-### 基础GPU渲染管线
 
-（待补充）
-
-<img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202110282255523.png" alt="image-20211028225552443" width="800px;" />
-
-### OpenGL
-
-### OpenGL 着色语言(GLSL)
-
-### 渲染方程
+# 渲染方程
 
 $$
 L_0(p,w_0) = L_e(p,w_0) + \int_{H^2} f_r(p,w_i\rightarrow w_o) L_i(p,w_i) cos\theta_i dw_i \tag{3.1}
@@ -22,13 +12,13 @@ $$
 $$
 L_0(p,w_0) = L_e(p,w_0) + \int_{\Omega^+} L_i(p,w_i) f_r(p,w_i,w_o) cos\theta_i V(p,w_i) dw_i \tag{3.2}
 $$
-这里公式中的 $L_i( p ,w_i)$ 与 $V( p ,w_i)$ 相乘才等同于上一公式的 $L_i( p ,w_i)$，表示将①光源是否存在 和②光源能否打到 $ p$ 点 两项分开考虑
+这里公式中的 $L_i( p ,w_i)$ 与 $V( p ,w_i)$ 相乘才等同于上一公式的 $L_i( p ,w_i)$，表示将（光源是否存在） 和（光源能否打到 $ p$ 点）两项分开考虑
 
 
 
-## Shadow Mapping
+# Shadow Mapping
 
-### 基本思想
+## 基本思想
 
 这里只考虑点光源或者平行光源。
 
@@ -40,9 +30,9 @@ $$
 
 
 
-### 存在问题
+## 存在问题
 
-#### 1. Self occlusion（自遮挡）
+### 1. Self occlusion（自遮挡）
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012230917.png" alt="image-20211101223001812" width="800px;" />
 
@@ -52,13 +42,13 @@ $$
 
 但设置bias会带来另一个问题：detached shadow。
 
-#### 2. Detached shadow
+### 2. Detached shadow
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111012248429.png" alt="image-20211101224834349" width="800px;" />
 
 设置bias后，有可能出现这种情况，即本来判定为遮挡的点，因为bias的存在，被判定为不遮挡。那么当bias较大时，就会出现上图的状况。
 
-#### 3. Aliasing（走样）
+### 3. Aliasing（走样）
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022023700.png" alt="image-20211102202317556" width="800px;" />
 
@@ -68,7 +58,7 @@ $$
 
 
 
-### Second Depth Shadow Mapping
+## Second Depth Shadow Mapping
 
 (试图解决自遮挡和detached shadow的方法，但因耗费太高而没有人用)
 
@@ -82,7 +72,7 @@ $$
 
 
 
-### PCF（Percentage Closer Filtering）
+## PCF（Percentage Closer Filtering）
 
 PCF是抗锯齿，反走样的一种技术。
 
@@ -96,7 +86,7 @@ PCF是抗锯齿，反走样的一种技术。
 
 
 
-### PCSS（Percentage Closer Soft Shadows）
+## PCSS（Percentage Closer Soft Shadows）
 
 [Percentage-Closer Soft Shadows (nvidia.com)](https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf)
 
@@ -136,11 +126,11 @@ $$
 
    
 
-### VSSM（Variance Soft Shadow Mapping）
+## VSSM（Variance Soft Shadow Mapping）
 
 上述过程中，第1步和第3步中，对shadow map中每个像素，需要对它的一个邻域进行某个属性的加权平均，要访问邻域内每个像素的值，那么这种操作的时间耗费就会很高。而VSSM没有访问每一个像素值，而是用一种巧妙的方法得到我们所需要的值。
 
-#### 简化PCF
+### 简化PCF
 
 对于第三步的PCF，我们的操作是，对一个点 $p$，将它到光源的距离dis和shadow map上一块区域内的深度值比较，得到一系列的可见性值（0或1），将这些值平均，得到最终的可见性值。看起来我们需要知道邻域内每个像素的值，但实际上我们只需要知道邻域内有百分之多少的深度值是大于dis的就可以了。于是VSSM在这里使用了一个近似，即切比雪夫不等式：
 
@@ -160,7 +150,7 @@ $$
 
 这里不再细说了。均值可用前缀和算法求得，对于平方的均值，可以维护一个深度值的平方的map，同样用前缀和得到均值。
 
-#### 简化Blocker search
+### 简化Blocker search
 
 虽然这一步也是求一块区域内的深度值均值，但却有一点需要注意，这里求的是矩形区域内blocker的深度值均值，而不是所有深度值的均值。
 
@@ -178,7 +168,7 @@ $N$为矩形区域的像素数，$z_{avg}$为矩形区域内的平均深度；$N
 
 虽然VSSM耗费大大降低，但目前基本不用这种方法，因为图像降噪的技术非常成熟，可以在采样的PCSS中进行降噪，来达到很好的效果。
 
-#### 存在问题
+### 存在问题
 
 切比雪夫不等式
 $$
@@ -190,7 +180,7 @@ $$
 
 
 
-### MSM（Moment Shadow Mapping）
+## MSM（Moment Shadow Mapping）
 
 在VSSM里，切比雪夫不等式来近似求得一个概率，也就是CDF，但这个CDF是不精准的。因此如果能够找到更精确的CDF，就可以得到更精准的结果。
 
@@ -208,9 +198,9 @@ VSSM中只用到了 $X$ 和 $X^2$,，可以认为只用到了前两阶矩，如�
 
 
 
-### Distance Field Soft Shadows
+## Distance Field Soft Shadows
 
-#### signed distance function（符号距离函数）
+### signed distance function（符号距离函数）
 
 signed distance function（符号距离函数）：对空间中的任意一点，它到一个物体表面有一个最小距离（根据在物体的内外可能区分正负）。
 
@@ -228,7 +218,7 @@ signed distance function（符号距离函数）：对空间中的任意一点�
 
    <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111211419305.png" alt="image-20211102221703551" width="600px" />
 
-#### SDF在阴影中的应用
+### SDF在阴影中的应用
 
 阴影，可以理解为在着色点 $p$ 处，面光源被遮挡的越多就越暗。SDF可以得到一个着色点被遮挡的程度，也就得到了visibility。
 
