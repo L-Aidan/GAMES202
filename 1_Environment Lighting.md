@@ -4,7 +4,7 @@
 
 ## Approximation in RTR
 
-本节用到的一个数学近似。
+本节用到的一个数学近似。  
 
 有很多不等式，在一定情况下可以看作等号成立。由于实时渲染只要求看着真实，而不必满足绝对的真实，因此这种近似可以应用在渲染方程中。
 $$
@@ -71,7 +71,7 @@ $$
 $$
 f(i,o) = \frac{F(i,h)G(i,o,h)D(h)}{4(n,i)(n,o)} \tag{5}
 $$
-不考虑其中的 $G(i,o,h)$ 即shadowing-masking 项，那么还剩菲涅}尔项和法线分布函数项。
+不考虑其中的 $G(i,o,h)$ 即shadowing-masking 项，那么还剩菲涅尔项和法线分布函数项。
 
 ![image-20211123134053870](https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111231341983.png)
 
