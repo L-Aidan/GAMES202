@@ -102,7 +102,7 @@ PCF是抗锯齿，反走样的一种技术。
 $$
 w_{Penumbra} = (d_{Receiver} - d_{Blocker}) \cdot w_{Light} / d_{Blocker} \tag{3.4}
 $$
-（个人理解）实际应用时，如下图：
+实际应用时，如下图（个人理解）：
 
 <img src="https://raw.githubusercontent.com/L-Aidan/Images/main/img/202111022120550.png" alt="202111022120550" width="300px" />
 
@@ -118,7 +118,7 @@ $$
 
 至此，就可以完成整个流程：
 
-1. （Blocker search）让点 $p$ 连向光源的顶点，看这个视锥在shadow map上覆盖了多大的区域，在这个区域中计算平均  $d_{Blocker}$。
+1. （Blocker search）让点 $p$ 连向面光源的四个顶点，看这个视锥在shadow map上覆盖了多大的区域，在这个区域中计算平均  $d_{Blocker}$。
 
 2. （Penumbra estimation）用公式(3.4) 计算软阴影范围大小，确定PCF的滤波范围。
 
